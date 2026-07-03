@@ -7,12 +7,7 @@ local Window = WindUI:CreateWindow({
     Theme = "Amber",
     
     Accent = Color3.fromHex("#b45309"),
-    Background = Color3.fromHex("#3f210d"),
-    Outline = Color3.fromHex("#fcd34d"),
-    Text = Color3.fromHex("#fff7ed"),
-    Placeholder = Color3.fromHex("#fbbf24"),
     Button = Color3.fromHex("#f59e0b"),
-    Icon = Color3.fromHex("#f59e0b"),
     Slider = Color3.fromHex("#d97706"),
     Color = Color3.fromHex("#fbbf24"),
     Toggle = Color3.fromHex("d97706"),
