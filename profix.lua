@@ -2,7 +2,7 @@ local _version = "1.6.6"
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/download/" .. _version .. "/main.lua"))() 
 
 local Window = WindUI:CreateWindow({
-    Background = "https://raw.githubusercontent.com/snegr8308-lab/Backgrounds-Themes/main/Orange_video_bg.webm",
+    Background = "video:https://raw.githubusercontent.com/snegr8308-lab/Backgrounds-Themes/main/Orange_video_bg.webm",
     Title = "Profix Hub",
     Icon = "shield",
     Author = "by enormus",
