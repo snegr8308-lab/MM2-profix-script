@@ -1,7 +1,7 @@
 local _version = "1.6.6"
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/download/" .. _version .. "/main.lua"))() 
 local Window = WindUI:CreateWindow({
-BackgroundVideo = "",
+    Background = "video:https://raw.githubusercontent.com/snegr8308-lab/Backgrounds-Themes/main/Summer_Background.webm",
     Title = "Profix Hub",
     Icon = "shield", -- lucide icon
     Author = "by enormus",
@@ -13,10 +13,10 @@ BackgroundVideo = "",
     MaxSize = Vector2.new(850, 560),
     ToggleKey = Enum.KeyCode.LeftShift,
     Transparent = true,
-    Theme = "Dark",
+    Theme = "Amber",
     Resizable = true,
     SideBarWidth = 200,
-    BackgroundImageTransparency = 0.42,
+    BackgroundImageTransparency = 0.32,
     HideSearchBar = true,
     ScrollBarEnabled = false,
     -- ↓ Optional. You can remove it.
@@ -38,25 +38,5 @@ BackgroundVideo = "",
     
     --       remove this all, 
     -- !  ↓  if you DON'T need the key system
-    KeySystem = { 
-        -- ↓ Optional. You can remove it.
-        Key = { "1234", "5678" },
-        
-        Note = "Example Key System.",
-        
-        -- ↓ Optional. You can remove it.
-        Thumbnail = {
-            Image = "rbxassetid://",
-            Title = "Thumbnail",
-        },
-        
-        -- ↓ Optional. You can remove it.
-        URL = "YOUR LINK TO GET KEY (Discord, Linkvertise, Pastebin, etc.)",
-        
-        -- ↓ Optional. You can remove it.
-        SaveKey = false, -- automatically save and load the key.
-        
-        -- ↓ Optional. You can remove it.
-        -- API = {} ← Services. Read about it below ↓
     },
 })
