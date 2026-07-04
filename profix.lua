@@ -1,7 +1,7 @@
 local _version = "1.6.6"
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/download/" .. _version .. "/main.lua"))() 
 local Window = WindUI:CreateWindow({
-BackgroundVideo = "https://raw.githubusercontent.com/snegr8308-lab/Background_UI_summer/refs/heads/main/BackgroundSummer.mp4",
+BackgroundVideo = "",
     Title = "Profix Hub",
     Icon = "shield", -- lucide icon
     Author = "by enormus",
