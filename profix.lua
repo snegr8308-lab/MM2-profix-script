@@ -5,11 +5,18 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
+
 local ESP_Settings = {
-    Sherif = false, Murderer = false, Innocent = false,
-    Tracers = false, EmptyBox = false, Names = false, 
-    Studs = false, Highlight = false
+    Sherif = false, 
+    Murderer = false, 
+    Innocent = false,
+    Tracers = false, 
+    EmptyBox = false, 
+    Names = false, 
+    Studs = false, 
+    Highlight = false
 }
+
 local function getPlayerRole(player)
     if not player.Character then return "Innocent" end
     if player.Character:FindFirstChild("Knife", true) or (player.Backpack and player.Backpack:FindFirstChild("Knife", true)) then
@@ -23,7 +30,8 @@ end
 WindUI:AddTheme({ 
     Name = "SubRed", 
     Text = Color3.fromHex("#FFFFFF"), 
-    Icon = Color3.fromHex("#ef4444") })
+    Icon = Color3.fromHex("#ef4444") 
+})
 
 local Window = WindUI:CreateWindow({
     Background = "video:https://github.com/snegr8308-lab/Backgrounds-Themes/raw/main/red_bg.webm",
@@ -45,7 +53,6 @@ local MainSection = Window:Section({ Title = "Main", Icon = "home", Opened = tru
 local EcpTab = MainSection:Tab({ Title = "Ecp" })
 local AutoFarmTab = MainSection:Tab({ Title = "AutoFarm" })
 
-
 EcpTab:Toggle({ Title = "ESP Sherif", Callback = function(s) ESP_Settings.Sherif = s end })
 EcpTab:Toggle({ Title = "ESP Murderer", Callback = function(s) ESP_Settings.Murderer = s end })
 EcpTab:Toggle({ Title = "ESP Innocent", Callback = function(s) ESP_Settings.Innocent = s end })
@@ -54,7 +61,6 @@ EcpTab:Toggle({ Title = "Box", Callback = function(s) ESP_Settings.EmptyBox = s 
 EcpTab:Toggle({ Title = "Names", Callback = function(s) ESP_Settings.Names = s end })
 EcpTab:Toggle({ Title = "Studs", Callback = function(s) ESP_Settings.Studs = s end })
 EcpTab:Toggle({ Title = "Highlights", Callback = function(s) ESP_Settings.Highlight = s end })
-
 
 local ESP_Objects = {}
 
@@ -95,23 +101,19 @@ RunService.RenderStepped:Connect(function()
             local size = 1000 / pos.Z
             local obj = ESP_Objects[player]
 
-            
             obj.Highlight.Enabled = ESP_Settings.Highlight
             obj.Highlight.FillColor = color
             obj.Highlight.OutlineColor = color
 
-            
             obj.Box.Visible = ESP_Settings.EmptyBox and onScreen
             obj.Box.Color = color
             obj.Box.Size = Vector2.new(size * 1.5, size * 2)
             obj.Box.Position = Vector2.new(pos.X - obj.Box.Size.X / 2, pos.Y - obj.Box.Size.Y / 2)
             
-            
             obj.Tracer.Visible = ESP_Settings.Tracers and onScreen
             obj.Tracer.Color = color
             obj.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
             obj.Tracer.To = Vector2.new(pos.X, pos.Y)
-            
             
             obj.Name.Visible = (ESP_Settings.Names or ESP_Settings.Studs) and onScreen
             obj.Name.Color = color
@@ -127,33 +129,70 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-
 local FarmEnabled = false
 AutoFarmTab:Toggle({
     Title = "start auto farm",
     State = false,
     Callback = function(state)
         FarmEnabled = state
+        
+        
+        if not FarmEnabled then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.Health = 0
+            end
+            return
+        end
+
+        
         if FarmEnabled then
             task.spawn(function()
                 while FarmEnabled do
-                    local RootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    local character = LocalPlayer.Character
+                    local RootPart = character and character:FindFirstChild("HumanoidRootPart")
+                    
                     if RootPart then
-                        local closestCoin, shortestDistance = nil, math.huge
-                        for _, obj in pairs(workspace:GetDescendants()) do
-                            if obj.Name == "Coin_Server" and obj:IsA("BasePart") then
-                                local dist = (RootPart.Position - obj.Position).Magnitude
-                                if dist < shortestDistance then shortestDistance, closestCoin = dist, obj end
+                        
+                        local murderer = nil
+                        for _, p in pairs(Players:GetPlayers()) do
+                            if getPlayerRole(p) == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                                murderer = p.Character.HumanoidRootPart
+                                break
                             end
                         end
+
+                        if murderer then
+                            local distToMurderer = (RootPart.Position - murderer.Position).Magnitude
+                            if distToMurderer < 1000 then
+                                task.wait(1)
+                                continue 
+                            end
+                        end
+
+                        local closestCoin, shortestDistance = nil, math.huge
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj.Name == "Coin_Server" and obj:IsA("BasePart") and obj:FindFirstChild("TouchInterest") then
+                                local dist = (RootPart.Position - obj.Position).Magnitude
+                                if dist < shortestDistance then
+                                    shortestDistance, closestCoin = dist, obj
+                                end
+                            end
+                        end
+                        
                         if closestCoin then
                             local tween = TweenService:Create(RootPart, TweenInfo.new(shortestDistance / 100, Enum.EasingStyle.Linear), {CFrame = closestCoin.CFrame})
                             tween:Play()
-                            tween.Completed:Wait()
-                            task.wait(0.1)
-                        else task.wait(2.1) end
+                            
+                            while closestCoin and closestCoin:FindFirstChild("TouchInterest") and FarmEnabled do
+                                task.wait(0.4)
+                            end
+                            task.wait(0.5)
+                        else
+                            task.wait(1)
+                        end
                     end
-                    task.wait(2.1)
+                    task.wait(0.4)
                 end
             end)
         end
