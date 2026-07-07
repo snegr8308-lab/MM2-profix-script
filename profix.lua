@@ -2,13 +2,13 @@ local _version = "1.6.6"
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/download/" .. _version .. "/main.lua"))() 
 
 WindUI:AddTheme({
-    Name = "SubAmber",
+    Name = "SubRed",
     Text = Color3.fromHex("#FFFFFF"),
-    Icon = Color3.fromHex("#f59e0b"),
+    Icon = Color3.fromHex("#ef4444"),
 })
 
 local Window = WindUI:CreateWindow({
-    Background = "video:https://raw.githubusercontent.com/snegr8308-lab/Backgrounds-Themes/main/Orange_video_bg.webm",
+    Background = "video:https://github.com/snegr8308-lab/Backgrounds-Themes/raw/main/red_bg.webm",
     BackgroundTransparency = 0.67,
     Title = "Profix Hub",
     Icon = "shield",
@@ -16,7 +16,7 @@ local Window = WindUI:CreateWindow({
     Folder = "ProfixHub",
     Size = UDim2.fromOffset(580, 460),
     Transparent = true,
-    Theme = "SubAmber",
+    Theme = "SubRed",
     User = {
         Enabled = true,
         Anonymous = false,
