@@ -164,7 +164,7 @@ AutoFarmTab:Toggle({
 
                         if murderer then
                             local distToMurderer = (RootPart.Position - murderer.Position).Magnitude
-                            if distToMurderer < 1000 then
+                            if distToMurderer > 1000 then
                                 task.wait(1)
                                 continue 
                             end
@@ -181,18 +181,18 @@ AutoFarmTab:Toggle({
                         end
                         
                         if closestCoin then
-                            local tween = TweenService:Create(RootPart, TweenInfo.new(shortestDistance / 100, Enum.EasingStyle.Linear), {CFrame = closestCoin.CFrame})
+                            local tween = TweenService:Create(RootPart, TweenInfo.new(shortestDistance / 17, Enum.EasingStyle.Linear), {CFrame = closestCoin.CFrame})
                             tween:Play()
                             
                             while closestCoin and closestCoin:FindFirstChild("TouchInterest") and FarmEnabled do
-                                task.wait(0.4)
+                                task.wait(0.1)
                             end
-                            task.wait(0.5)
+                            task.wait(0.1)
                         else
-                            task.wait(1)
+                            task.wait(0.1)
                         end
                     end
-                    task.wait(0.4)
+                    task.wait(0.1)
                 end
             end)
         end
