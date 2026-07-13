@@ -7,15 +7,27 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 local ESP_Settings = {
-    Sherif = false, 
-    Murderer = false, 
-    Innocent = false,
-    Tracers = false, 
-    EmptyBox = false, 
-    Names = false, 
-    Studs = false, 
-    Highlight = false
+    Sherif = false, Murderer = false, Innocent = false,
+    Tracers = false, EmptyBox = false, Names = false, 
+    Studs = false, Highlight = false
 }
+
+local FarmSettings = { Enabled = false, Speed = 17 }
+local PlayerSettings = { WalkSpeed = 16, JumpPower = 50 }
+local currentTween = nil 
+
+local function applyPlayerSettings(character)
+    local humanoid = character and character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = PlayerSettings.WalkSpeed
+        humanoid.JumpPower = PlayerSettings.JumpPower
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    task.wait(0.5) 
+    applyPlayerSettings(character)
+end)
 
 local function getPlayerRole(player)
     if not player.Character then return "Innocent" end
@@ -27,11 +39,7 @@ local function getPlayerRole(player)
     return "Innocent"
 end
 
-WindUI:AddTheme({ 
-    Name = "SubRed", 
-    Text = Color3.fromHex("#FFFFFF"), 
-    Icon = Color3.fromHex("#ef4444") 
-})
+WindUI:AddTheme({ Name = "SubRed", Text = Color3.fromHex("#FFFFFF"), Icon = Color3.fromHex("#ef4444") })
 
 local Window = WindUI:CreateWindow({
     Background = "video:https://github.com/snegr8308-lab/Backgrounds-Themes/raw/main/red_bg.webm",
@@ -43,16 +51,19 @@ local Window = WindUI:CreateWindow({
     Size = UDim2.fromOffset(580, 460),
     Transparent = true, 
     Theme = "SubRed", 
-    User = { 
-        Enabled = true, 
-        Anonymous = false,
-    },
+    User = { Enabled = true, Anonymous = false },
 })
 
 local MainSection = Window:Section({ Title = "Main", Icon = "home", Opened = true })
 local EcpTab = MainSection:Tab({ Title = "Ecp" })
 local AutoFarmTab = MainSection:Tab({ Title = "AutoFarm" })
+local PlayerTab = MainSection:Tab({ Title = "Player" })
 
+local RolesSection = Window:Section({ Title = "Roles", Icon = "user", Opened = false })
+local SherifTab = RolesSection:Tab({ Title = "Sherif" })
+local MurderTab = RolesSection:Tab({ Title = "Murderer" })
+
+-- ESP Toggles
 EcpTab:Toggle({ Title = "ESP Sherif", Callback = function(s) ESP_Settings.Sherif = s end })
 EcpTab:Toggle({ Title = "ESP Murderer", Callback = function(s) ESP_Settings.Murderer = s end })
 EcpTab:Toggle({ Title = "ESP Innocent", Callback = function(s) ESP_Settings.Innocent = s end })
@@ -62,139 +73,97 @@ EcpTab:Toggle({ Title = "Names", Callback = function(s) ESP_Settings.Names = s e
 EcpTab:Toggle({ Title = "Studs", Callback = function(s) ESP_Settings.Studs = s end })
 EcpTab:Toggle({ Title = "Highlights", Callback = function(s) ESP_Settings.Highlight = s end })
 
-local ESP_Objects = {}
+-- AutoFarm
+AutoFarmTab:Slider({ Title = "Farm Speed", Value = { Min = 17, Max = 100, Default = 17 }, Callback = function(v) FarmSettings.Speed = v end })
+AutoFarmTab:Toggle({
+    Title = "Start Auto Farm", State = false,
+    Callback = function(state)
+        FarmSettings.Enabled = state
+        if not FarmSettings.Enabled then if currentTween then currentTween:Cancel() currentTween = nil end return end
+        task.spawn(function()
+            while FarmSettings.Enabled do
+                local character = LocalPlayer.Character
+                local RootPart = character and character:FindFirstChild("HumanoidRootPart")
+                if RootPart then
+                    local closestCoin, shortestDistance = nil, math.huge
+                    for _, obj in pairs(workspace:GetDescendants()) do
+                        if obj.Name == "Coin_Server" and obj:IsA("BasePart") then
+                            local dist = (RootPart.Position - obj.Position).Magnitude
+                            if dist < shortestDistance then shortestDistance, closestCoin = dist, obj end
+                        end
+                    end
+                    if closestCoin then
+                        currentTween = TweenService:Create(RootPart, TweenInfo.new(shortestDistance / FarmSettings.Speed, Enum.EasingStyle.Linear), {CFrame = closestCoin.CFrame})
+                        currentTween:Play()
+                        currentTween.Completed:Wait()
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+})
 
+-- Player
+PlayerTab:Slider({ Title = "WalkSpeed", Value = { Min = 16, Max = 100, Default = 16 }, Callback = function(v) PlayerSettings.WalkSpeed = v; applyPlayerSettings(LocalPlayer.Character) end })
+PlayerTab:Slider({ Title = "JumpPower", Value = { Min = 50, Max = 200, Default = 50 }, Callback = function(v) PlayerSettings.JumpPower = v; applyPlayerSettings(LocalPlayer.Character) end })
+
+-- Sherif Shoot Button
+SherifTab:Button({
+    Title = "Shoot Murderer",
+    Callback = function()
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and getPlayerRole(player) == "Murderer" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local Gun = LocalPlayer.Character:FindFirstChild("Gun", true) or LocalPlayer.Backpack:FindFirstChild("Gun", true)
+                if Gun and Gun:FindFirstChild("Shoot") then
+                    Gun.Shoot:FireServer(player.Character.HumanoidRootPart.CFrame, LocalPlayer.Character.HumanoidRootPart.CFrame)
+                end
+                break
+            end
+        end
+    end
+})
+
+-- ESP Loop
+local ESP_Objects = {}
 RunService.RenderStepped:Connect(function()
     for _, player in pairs(Players:GetPlayers()) do
         if player == LocalPlayer or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
             if ESP_Objects[player] then
-                for _, obj in pairs(ESP_Objects[player]) do 
-                    if typeof(obj) == "Instance" then obj:Destroy() else obj:Remove() end 
-                end
+                for _, obj in pairs(ESP_Objects[player]) do if typeof(obj) == "Instance" then obj:Destroy() else obj:Remove() end end
                 ESP_Objects[player] = nil
             end
             continue
         end
-
         local role = getPlayerRole(player)
         local isEnabled = (role == "Sherif" and ESP_Settings.Sherif) or (role == "Murderer" and ESP_Settings.Murderer) or (role == "Innocent" and ESP_Settings.Innocent)
-
         if isEnabled then
             if not ESP_Objects[player] then
-                ESP_Objects[player] = { 
-                    Box = Drawing.new("Square"), 
-                    Tracer = Drawing.new("Line"), 
-                    Name = Drawing.new("Text"),
-                    Highlight = Instance.new("Highlight")
-                }
+                ESP_Objects[player] = { Box = Drawing.new("Square"), Tracer = Drawing.new("Line"), Name = Drawing.new("Text"), Highlight = Instance.new("Highlight") }
                 ESP_Objects[player].Box.Filled = false
-                ESP_Objects[player].Box.Thickness = 1.5
-                ESP_Objects[player].Name.Size = 18
-                ESP_Objects[player].Name.Center = true
                 ESP_Objects[player].Highlight.Parent = player.Character
             end
-
             local color = (role == "Murderer" and Color3.fromRGB(255, 0, 0)) or (role == "Sherif" and Color3.fromRGB(0, 120, 255)) or Color3.fromRGB(0, 255, 0)
             local hrp = player.Character.HumanoidRootPart
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-            local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
-            local size = 1000 / pos.Z
             local obj = ESP_Objects[player]
-
             obj.Highlight.Enabled = ESP_Settings.Highlight
             obj.Highlight.FillColor = color
-            obj.Highlight.OutlineColor = color
-
             obj.Box.Visible = ESP_Settings.EmptyBox and onScreen
             obj.Box.Color = color
-            obj.Box.Size = Vector2.new(size * 1.5, size * 2)
-            obj.Box.Position = Vector2.new(pos.X - obj.Box.Size.X / 2, pos.Y - obj.Box.Size.Y / 2)
-            
+            obj.Box.Size = Vector2.new(1000/pos.Z * 1.5, 1000/pos.Z * 2)
+            obj.Box.Position = Vector2.new(pos.X - obj.Box.Size.X/2, pos.Y - obj.Box.Size.Y/2)
             obj.Tracer.Visible = ESP_Settings.Tracers and onScreen
             obj.Tracer.Color = color
-            obj.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+            obj.Tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
             obj.Tracer.To = Vector2.new(pos.X, pos.Y)
-            
-            obj.Name.Visible = (ESP_Settings.Names or ESP_Settings.Studs) and onScreen
+            obj.Name.Visible = (ESP_Settings.Names) and onScreen
             obj.Name.Color = color
-            obj.Name.Text = (ESP_Settings.Names and player.Name or "") .. (ESP_Settings.Studs and (" [" .. math.floor(dist) .. "]") or "")
-            obj.Name.Position = Vector2.new(pos.X, pos.Y - size)
-            
+            obj.Name.Text = player.Name
+            obj.Name.Position = Vector2.new(pos.X, pos.Y - 50)
         elseif ESP_Objects[player] then
-            for _, o in pairs(ESP_Objects[player]) do 
-                if typeof(o) == "Instance" then o:Destroy() else o:Remove() end 
-            end
+            for _, o in pairs(ESP_Objects[player]) do if typeof(o) == "Instance" then o:Destroy() else o:Remove() end end
             ESP_Objects[player] = nil
         end
     end
 end)
-
-local FarmEnabled = false
-AutoFarmTab:Toggle({
-    Title = "start auto farm",
-    State = false,
-    Callback = function(state)
-        FarmEnabled = state
-        
-        
-        if not FarmEnabled then
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.Health = 0
-            end
-            return
-        end
-
-        
-        if FarmEnabled then
-            task.spawn(function()
-                while FarmEnabled do
-                    local character = LocalPlayer.Character
-                    local RootPart = character and character:FindFirstChild("HumanoidRootPart")
-                    
-                    if RootPart then
-                        
-                        local murderer = nil
-                        for _, p in pairs(Players:GetPlayers()) do
-                            if getPlayerRole(p) == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                                murderer = p.Character.HumanoidRootPart
-                                break
-                            end
-                        end
-
-                        if murderer then
-                            local distToMurderer = (RootPart.Position - murderer.Position).Magnitude
-                            if distToMurderer > 1000 then
-                                task.wait(1)
-                                continue 
-                            end
-                        end
-
-                        local closestCoin, shortestDistance = nil, math.huge
-                        for _, obj in pairs(workspace:GetDescendants()) do
-                            if obj.Name == "Coin_Server" and obj:IsA("BasePart") and obj:FindFirstChild("TouchInterest") then
-                                local dist = (RootPart.Position - obj.Position).Magnitude
-                                if dist < shortestDistance then
-                                    shortestDistance, closestCoin = dist, obj
-                                end
-                            end
-                        end
-                        
-                        if closestCoin then
-                            local tween = TweenService:Create(RootPart, TweenInfo.new(shortestDistance / 17, Enum.EasingStyle.Linear), {CFrame = closestCoin.CFrame})
-                            tween:Play()
-                            
-                            while closestCoin and closestCoin:FindFirstChild("TouchInterest") and FarmEnabled do
-                                task.wait(0.1)
-                            end
-                            task.wait(0.1)
-                        else
-                            task.wait(0.1)
-                        end
-                    end
-                    task.wait(0.1)
-                end
-            end)
-        end
-    end
-})
