@@ -6,15 +6,18 @@ local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
+-- Настройки и переменные
 local ESP_Settings = {
     Sherif = false, Murderer = false, Innocent = false,
     Tracers = false, EmptyBox = false, Names = false, 
     Studs = false, Highlight = false
 }
-
 local FarmSettings = { Enabled = false, Speed = 17 }
 local PlayerSettings = { WalkSpeed = 16, JumpPower = 50 }
 local currentTween = nil 
+local AimButtonGui = nil 
+local KillButtonGui = nil
+local ESP_Objects = {}
 
 local function applyPlayerSettings(character)
     local humanoid = character and character:FindFirstChild("Humanoid")
@@ -56,9 +59,11 @@ local Window = WindUI:CreateWindow({
 
 local MainSection = Window:Section({ Title = "Main", Icon = "home", Opened = true })
 local EcpTab = MainSection:Tab({ Title = "Ecp" })
-local AutoFarmTab = MainSection:Tab({ Title = "AutoFarm" })
+local AutoFarmTab = MainSection:Tab({ 
+    Title = "AutoFarm",
+    Locked = true,
+    })
 local PlayerTab = MainSection:Tab({ Title = "Player" })
-
 local RolesSection = Window:Section({ Title = "Roles", Icon = "user", Opened = false })
 local SherifTab = RolesSection:Tab({ Title = "Sherif" })
 local MurderTab = RolesSection:Tab({ Title = "Murderer" })
@@ -74,9 +79,12 @@ EcpTab:Toggle({ Title = "Studs", Callback = function(s) ESP_Settings.Studs = s e
 EcpTab:Toggle({ Title = "Highlights", Callback = function(s) ESP_Settings.Highlight = s end })
 
 -- AutoFarm
-AutoFarmTab:Slider({ Title = "Farm Speed", Value = { Min = 17, Max = 100, Default = 17 }, Callback = function(v) FarmSettings.Speed = v end })
+AutoFarmTab:Slider({ Title = "Farm Speed",
+    Locked = false,
+    Value = { Min = 17, Max = 100, Default = 17 }, Callback = function(v) FarmSettings.Speed = v end })
 AutoFarmTab:Toggle({
-    Title = "Start Auto Farm", State = false,
+    Title = "Start Auto Farm", 
+    State = false,
     Callback = function(state)
         FarmSettings.Enabled = state
         if not FarmSettings.Enabled then if currentTween then currentTween:Cancel() currentTween = nil end return end
@@ -108,24 +116,92 @@ AutoFarmTab:Toggle({
 PlayerTab:Slider({ Title = "WalkSpeed", Value = { Min = 16, Max = 100, Default = 16 }, Callback = function(v) PlayerSettings.WalkSpeed = v; applyPlayerSettings(LocalPlayer.Character) end })
 PlayerTab:Slider({ Title = "JumpPower", Value = { Min = 50, Max = 200, Default = 50 }, Callback = function(v) PlayerSettings.JumpPower = v; applyPlayerSettings(LocalPlayer.Character) end })
 
--- Sherif Shoot Button
+-- Sherif Buttons
 SherifTab:Button({
-    Title = "Shoot Murderer",
+    Title = "Toggle Crosshair Button",
     Callback = function()
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and getPlayerRole(player) == "Murderer" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local Gun = LocalPlayer.Character:FindFirstChild("Gun", true) or LocalPlayer.Backpack:FindFirstChild("Gun", true)
-                if Gun and Gun:FindFirstChild("Shoot") then
-                    Gun.Shoot:FireServer(player.Character.HumanoidRootPart.CFrame, LocalPlayer.Character.HumanoidRootPart.CFrame)
+        if AimButtonGui then
+            AimButtonGui:Destroy()
+            AimButtonGui = nil
+        else
+            AimButtonGui = Instance.new("ScreenGui", game.CoreGui)
+            local btn = Instance.new("ImageButton", AimButtonGui)
+            btn.Size = UDim2.new(0, 100, 0, 100)
+            btn.Position = UDim2.new(0.5, -120, 0.5, -50)
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            btn.AutoButtonColor = false
+            btn.Draggable = true
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0.25, 0)
+            Instance.new("UIStroke", btn).Color = Color3.new(0, 0, 0)
+            Instance.new("UIStroke", btn).Thickness = 4
+            
+            local function cL(s, p) local l = Instance.new("Frame", btn) l.Size = s; l.Position = p; l.BackgroundColor3 = Color3.new(1,1,1); l.BorderSizePixel = 0 end
+            cL(UDim2.new(0.06,0,0.35,0), UDim2.new(0.47,0,0.1,0))
+            cL(UDim2.new(0.06,0,0.35,0), UDim2.new(0.47,0,0.55,0))
+            cL(UDim2.new(0.35,0,0.06,0), UDim2.new(0.1,0,0.47,0))
+            cL(UDim2.new(0.35,0,0.06,0), UDim2.new(0.55,0,0.47,0))
+            
+            btn.MouseButton1Click:Connect(function()
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and getPlayerRole(player) == "Murderer" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        local Gun = LocalPlayer.Character:FindFirstChild("Gun", true) or LocalPlayer.Backpack:FindFirstChild("Gun", true)
+                        if Gun and Gun:FindFirstChild("Shoot") then
+                            Gun.Shoot:FireServer(player.Character.HumanoidRootPart.CFrame, LocalPlayer.Character.HumanoidRootPart.CFrame)
+                        end
+                        break
+                    end
                 end
-                break
-            end
+            end)
+        end
+    end
+})
+
+-- Murderer Buttons
+MurderTab:Button({
+    Title = "Toggle KillAll Button",
+    Callback = function()
+        if KillButtonGui then
+            KillButtonGui:Destroy()
+            KillButtonGui = nil
+        else
+            KillButtonGui = Instance.new("ScreenGui", game.CoreGui)
+            local btn = Instance.new("ImageButton", KillButtonGui)
+            btn.Size = UDim2.new(0, 100, 0, 100)
+            btn.Position = UDim2.new(0.5, 20, 0.5, -50)
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            btn.AutoButtonColor = false
+            btn.Draggable = true
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0.25, 0)
+            Instance.new("UIStroke", btn).Color = Color3.new(0, 0, 0)
+            Instance.new("UIStroke", btn).Thickness = 4
+            
+            local icon = Instance.new("ImageLabel", btn)
+            icon.Size = UDim2.new(0.6, 0, 0.6, 0)
+            icon.Position = UDim2.new(0.2, 0, 0.2, 0)
+            icon.BackgroundTransparency = 1
+            icon.Image = "rbxassetid://6034878345"
+            icon.ImageColor3 = Color3.fromRGB(255, 50, 50)
+            
+            btn.MouseButton1Click:Connect(function()
+                local Remote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Gameplay"):WaitForChild("KillEvent")
+                local MyHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if not MyHRP then return end
+                local savedCFrame = MyHRP.CFrame
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        local targetHRP = player.Character.HumanoidRootPart
+                        MyHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 1.5)
+                        Remote:FireServer(player.Name, Color3.new(0.098, 0.882, 0.098), "Melee Kill!", targetHRP.CFrame)
+                        task.wait(0.1)
+                    end
+                end
+                MyHRP.CFrame = savedCFrame
+            end)
         end
     end
 })
 
 -- ESP Loop
-local ESP_Objects = {}
 RunService.RenderStepped:Connect(function()
     for _, player in pairs(Players:GetPlayers()) do
         if player == LocalPlayer or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
