@@ -19,6 +19,33 @@ local AimButtonGui = nil
 local KillButtonGui = nil
 local ESP_Objects = {}
 
+-- Функция определения карты
+local function getActiveMap()
+    local mapKeywords = {
+        ["Bank"] = "Bank",
+        ["Bio"] = "Biolaboratory",
+        ["Factory"] = "Factory",
+        ["Hospital"] = "Hospital",
+        ["Hotel"] = "Hotel",
+        ["House"] = "House",
+        ["Mansion"] = "Mansion",
+        ["Mil"] = "Military Base",
+        ["Office"] = "Office",
+        ["Police"] = "Police station",
+        ["Research"] = "Research Center",
+        ["Work"] = "Workplace"
+    }
+
+    for _, obj in pairs(workspace:GetChildren()) do
+        for key, fullName in pairs(mapKeywords) do
+            if string.find(obj.Name, key) then
+                return obj, fullName
+            end
+        end
+    end
+    return nil, nil
+end
+
 local function applyPlayerSettings(character)
     local humanoid = character and character:FindFirstChild("Humanoid")
     if humanoid then
@@ -234,8 +261,13 @@ TeleportTab:Button({ Title = "TP to Sherif", Callback = function()
 end})
 
 TeleportTab:Button({ Title = "TP to Map", Callback = function()
-    local map = workspace:FindFirstChild("Map") or workspace:FindFirstChild("MapModel")
-    if map and map:FindFirstChild("Spawns") then LocalPlayer.Character.HumanoidRootPart.CFrame = map.Spawns:GetChildren()[1].CFrame end
+    local map = getActiveMap()
+    if map and map:FindFirstChild("Spawns") then
+        local spawns = map.Spawns:GetChildren()
+        if #spawns > 0 then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = spawns[1].CFrame + Vector3.new(0, 3, 0)
+        end
+    end
 end})
 
 TeleportTab:Button({ Title = "TP to Lobby", Callback = function()
@@ -332,7 +364,7 @@ RunService.RenderStepped:Connect(function()
             for _, o in pairs(ESP_Objects[player]) do 
                 if typeof(o) == "Instance" then o:Destroy() 
                 elseif typeof(o) == "table" then for _, line in pairs(o) do line:Remove() end
-                elseif o.Remove then o:Remove() end 
+                elseif o.Remove then o.Remove(o) end 
             end
             ESP_Objects[player] = nil
         end
