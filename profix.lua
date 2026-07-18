@@ -16,9 +16,9 @@ task.spawn(function()
         if gunDrop then
             if not gunDetected then
                 WindUI:Notify({
-                    Title = "Dropped Gun",
-                    Content = "Gun dropped! Go to pick up",
-                    Duration = 3,
+                    Title = "Profix Hub",
+                    Content = "Оружие выпало! Его можно подобрать.",
+                    Duration = 5,
                     Icon = "triangle-alert",
                 })
                 gunDetected = true
@@ -41,6 +41,10 @@ local AimButtonGui = nil
 local KillButtonGui = nil
 local GunButtonGui = nil
 local ESP_Objects = {}
+
+-- Переменные для Anti-Fling
+local antiFlingConnections = {}
+local AntiFlingEnabled = false
 
 local function getActiveMap()
     local mapKeywords = {
@@ -81,6 +85,60 @@ local function getPlayerRole(player)
     end
     return "Innocent"
 end
+
+-- === Функции Anti-Fling ===
+local function setupCharacterCollision(character)
+    local function disableCollide(part)
+        if AntiFlingEnabled and part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+
+    for _, part in ipairs(character:GetChildren()) do
+        disableCollide(part)
+    end
+
+    local childAddedConn = character.ChildAdded:Connect(disableCollide)
+
+    local steppedConn = RunService.Stepped:Connect(function()
+        if AntiFlingEnabled and character:IsDescendantOf(workspace) then
+            for _, part in ipairs(character:GetChildren()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+
+    character.Destroying:Connect(function()
+        childAddedConn:Disconnect()
+        steppedConn:Disconnect()
+    end)
+end
+
+local function trackPlayer(player)
+    if player == LocalPlayer then return end
+    local charAddedConn = player.CharacterAdded:Connect(setupCharacterCollision)
+    if player.Character then
+        setupCharacterCollision(player.Character)
+    end
+    antiFlingConnections[player] = charAddedConn
+end
+
+local function untrackPlayer(player)
+    if antiFlingConnections[player] then
+        antiFlingConnections[player]:Disconnect()
+        antiFlingConnections[player] = nil
+    end
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    trackPlayer(player)
+end
+
+Players.PlayerAdded:Connect(trackPlayer)
+Players.PlayerRemoving:Connect(untrackPlayer)
+-- ==========================
 
 WindUI:AddTheme({ Name = "SubRed", Text = Color3.fromHex("#FFFFFF"), Icon = Color3.fromHex("#ef4444") })
 
@@ -160,6 +218,15 @@ AutoFarmTab:Toggle({
 
 PlayerTab:Slider({ Title = "WalkSpeed", Value = { Min = 16, Max = 100, Default = 16 }, Callback = function(v) PlayerSettings.WalkSpeed = v; applyPlayerSettings(LocalPlayer.Character) end })
 PlayerTab:Slider({ Title = "JumpPower", Value = { Min = 50, Max = 200, Default = 50 }, Callback = function(v) PlayerSettings.JumpPower = v; applyPlayerSettings(LocalPlayer.Character) end })
+
+-- Добавлен тумблер Anti-Fling
+PlayerTab:Toggle({
+    Title = "Anti-Fling",
+    State = false,
+    Callback = function(state)
+        AntiFlingEnabled = state
+    end
+})
 
 SherifTab:Button({
     Title = "Spawn wallbang murder button",
