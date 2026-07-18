@@ -5,7 +5,8 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
--- Добавьте этот цикл после инициализации WindUI
+
+-- Функция уведомления при появлении GunDrop
 task.spawn(function()
     local gunDetected = false
     while true do
@@ -15,9 +16,9 @@ task.spawn(function()
         if gunDrop then
             if not gunDetected then
                 WindUI:Notify({
-                    Title = "Profix Hub",
-                    Content = "Оружие выпало! Его можно подобрать.",
-                    Duration = 5,
+                    Title = "Dropped Gun",
+                    Content = "Gun dropped! Go to pick up",
+                    Duration = 3,
                     Icon = "alert-triangle",
                 })
                 gunDetected = true
@@ -28,12 +29,10 @@ task.spawn(function()
     end
 end)
 
-
-
 local ESP_Settings = {
     Sherif = false, Murderer = false, Innocent = false,
     Tracers = false, EmptyBox = false, Names = false, 
-    Studs = false, Highlight = false
+    Studs = false, Highlight = false, GunESP = false
 }
 local FarmSettings = { Enabled = false, Speed = 17 }
 local PlayerSettings = { WalkSpeed = 16, JumpPower = 50 }
@@ -43,21 +42,11 @@ local KillButtonGui = nil
 local GunButtonGui = nil
 local ESP_Objects = {}
 
-
 local function getActiveMap()
     local mapKeywords = {
-        ["Bank"] = "Bank",
-        ["Bio"] = "Biolaboratory",
-        ["Factory"] = "Factory",
-        ["Hospital"] = "Hospital",
-        ["Hotel"] = "Hotel",
-        ["House"] = "House",
-        ["Mansion"] = "Mansion",
-        ["Mil"] = "Military Base",
-        ["Office"] = "Office",
-        ["Police"] = "Police station",
-        ["Research"] = "Research Center",
-        ["Work"] = "Workplace"
+        ["Bank"] = "Bank", ["Bio"] = "Biolaboratory", ["Factory"] = "Factory", ["Hospital"] = "Hospital",
+        ["Hotel"] = "Hotel", ["House"] = "House", ["Mansion"] = "Mansion", ["Mil"] = "Military Base",
+        ["Office"] = "Office", ["Police"] = "Police station", ["Research"] = "Research Center", ["Work"] = "Workplace"
     }
 
     for _, obj in pairs(workspace:GetChildren()) do
@@ -108,7 +97,6 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 })
 
-
 local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
 local EcpTab = Window:Tab({ Title = "Ecp", Icon = "eye" })
 local AutoFarmTab = Window:Tab({ Title = "AutoFarm", Icon = "zap" })
@@ -116,7 +104,6 @@ local PlayerTab = Window:Tab({ Title = "Player", Icon = "user" })
 local SherifTab = Window:Tab({ Title = "Sherif", Icon = "crosshair" })
 local MurderTab = Window:Tab({ Title = "Murderer", Icon = "skull" })
 local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
-
 
 local accountAge = LocalPlayer.AccountAge .. " days"
 local avatarImage = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=420&h=420"
@@ -132,16 +119,14 @@ HomeTab:Paragraph({
     ImageSize = 80
 })
 
-
 EcpTab:Toggle({ Title = "ESP Sherif", Callback = function(s) ESP_Settings.Sherif = s end })
 EcpTab:Toggle({ Title = "ESP Murderer", Callback = function(s) ESP_Settings.Murderer = s end })
 EcpTab:Toggle({ Title = "ESP Innocent", Callback = function(s) ESP_Settings.Innocent = s end })
+EcpTab:Toggle({ Title = "ESP Dropped Gun", Callback = function(s) ESP_Settings.GunESP = s end })
 EcpTab:Toggle({ Title = "Tracers", Callback = function(s) ESP_Settings.Tracers = s end })
 EcpTab:Toggle({ Title = "Box", Callback = function(s) ESP_Settings.EmptyBox = s end })
 EcpTab:Toggle({ Title = "Names", Callback = function(s) ESP_Settings.Names = s end })
 EcpTab:Toggle({ Title = "Outlines", Callback = function(s) ESP_Settings.Highlight = s end })
-
-
 AutoFarmTab:Slider({ Title = "Farm Speed", Value = { Min = 17, Max = 100, Default = 17 }, Callback = function(v) FarmSettings.Speed = v end })
 AutoFarmTab:Toggle({
     Title = "Start Auto Farm", 
@@ -173,11 +158,9 @@ AutoFarmTab:Toggle({
     end
 })
 
--- Player
 PlayerTab:Slider({ Title = "WalkSpeed", Value = { Min = 16, Max = 100, Default = 16 }, Callback = function(v) PlayerSettings.WalkSpeed = v; applyPlayerSettings(LocalPlayer.Character) end })
 PlayerTab:Slider({ Title = "JumpPower", Value = { Min = 50, Max = 200, Default = 50 }, Callback = function(v) PlayerSettings.JumpPower = v; applyPlayerSettings(LocalPlayer.Character) end })
 
--- Sherif
 SherifTab:Button({
     Title = "Spawn wallbang murder button",
     Callback = function()
@@ -247,7 +230,6 @@ SherifTab:Button({
     end
 })
 
--- Murderer
 MurderTab:Button({
     Title = "Spawn kill all button",
     Callback = function()
@@ -279,7 +261,6 @@ MurderTab:Button({
     end
 })
 
--- Teleport Tab
 local selectedPlayer = nil
 local playerDropdown = nil
 
@@ -337,8 +318,22 @@ TeleportTab:Button({ Title = "TP to Lobby", Callback = function()
     elseif lobby and lobby:FindFirstChildWhichIsA("BasePart") then LocalPlayer.Character.HumanoidRootPart.CFrame = lobby:FindFirstChildWhichIsA("BasePart").CFrame end
 end})
 
--- ESP Loop
 RunService.RenderStepped:Connect(function()
+    -- ESP для GunDrop
+    local gunDrop = workspace:FindFirstChild("GunDrop", true)
+    if ESP_Settings.GunESP and gunDrop and gunDrop:IsA("BasePart") then
+        local pos, onScreen = Camera:WorldToViewportPoint(gunDrop.Position)
+        if not ESP_Objects["GunDrop"] then
+            local label = Drawing.new("Text")
+            label.Center = true; label.Outline = true; label.Size = 20; label.Color = Color3.fromRGB(255, 255, 0); label.Text = "Dropped Gun"
+            ESP_Objects["GunDrop"] = label
+        end
+        ESP_Objects["GunDrop"].Visible = onScreen
+        ESP_Objects["GunDrop"].Position = Vector2.new(pos.X, pos.Y)
+    else
+        if ESP_Objects["GunDrop"] then ESP_Objects["GunDrop"]:Remove(); ESP_Objects["GunDrop"] = nil end
+    end
+
     for _, player in pairs(Players:GetPlayers()) do
         local char = player.Character
         if player == LocalPlayer or not char or not char:FindFirstChild("HumanoidRootPart") then
@@ -422,4 +417,12 @@ RunService.RenderStepped:Connect(function()
             end
             
         elseif ESP_Objects[player] then
-            for _
+            for _, obj in pairs(ESP_Objects[player]) do 
+                if typeof(obj) == "Instance" then obj:Destroy() 
+                elseif typeof(obj) == "table" then for _, line in pairs(obj) do line:Remove() end
+                elseif obj.Remove then obj:Remove() end 
+            end
+            ESP_Objects[player] = nil
+        end
+    end
+end)
