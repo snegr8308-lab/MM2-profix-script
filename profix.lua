@@ -17,6 +17,7 @@ local PlayerSettings = { WalkSpeed = 16, JumpPower = 50 }
 local currentTween = nil 
 local AimButtonGui = nil 
 local KillButtonGui = nil
+local GunButtonGui = nil
 local ESP_Objects = {}
 
 -- Функция определения карты
@@ -179,6 +180,43 @@ SherifTab:Button({
                         task.wait(0.05)
                         MyHRP.CFrame = savedCFrame
                         break
+                    end
+                end
+            end)
+        end
+    end
+})
+
+SherifTab:Button({
+    Title = "Spawn Auto-Grab Button",
+    Callback = function()
+        if GunButtonGui then
+            GunButtonGui:Destroy()
+            GunButtonGui = nil
+        else
+            GunButtonGui = Instance.new("ScreenGui", game.CoreGui)
+            local btn = Instance.new("TextButton", GunButtonGui)
+            btn.Name = "AutoGrabButton"
+            btn.Size = UDim2.new(0, 150, 0, 50)
+            btn.Position = UDim2.new(0.5, 0, 0.7, 0)
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            btn.Text = "Grab Gun"
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.Draggable = true
+            Instance.new("UICorner", btn)
+            
+            btn.MouseButton1Click:Connect(function()
+                local char = LocalPlayer.Character
+                local HRP = char and char:FindFirstChild("HumanoidRootPart")
+                if not HRP then return end
+                
+                local gunDrop = workspace:FindFirstChild("GunDrop", true)
+                if gunDrop and gunDrop:IsA("BasePart") then
+                    local savedPosition = HRP.CFrame
+                    HRP.CFrame = gunDrop.CFrame
+                    task.wait(0.3)
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = savedPosition
                     end
                 end
             end)
