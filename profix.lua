@@ -5,6 +5,29 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
+-- Добавьте этот цикл после инициализации WindUI
+task.spawn(function()
+    local gunDetected = false
+    while true do
+        task.wait(0.1)
+        local gunDrop = workspace:FindFirstChild("GunDrop", true)
+        
+        if gunDrop then
+            if not gunDetected then
+                WindUI:Notify({
+                    Title = "Profix Hub",
+                    Content = "Оружие выпало! Его можно подобрать.",
+                    Duration = 5,
+                    Icon = "alert-triangle",
+                })
+                gunDetected = true
+            end
+        else
+            gunDetected = false
+        end
+    end
+end)
+
 
 
 local ESP_Settings = {
@@ -399,12 +422,4 @@ RunService.RenderStepped:Connect(function()
             end
             
         elseif ESP_Objects[player] then
-            for _, o in pairs(ESP_Objects[player]) do 
-                if typeof(o) == "Instance" then o:Destroy() 
-                elseif typeof(o) == "table" then for _, line in pairs(o) do line:Remove() end
-                elseif o.Remove then o.Remove(o) end 
-            end
-            ESP_Objects[player] = nil
-        end
-    end
-end)
+            for _
