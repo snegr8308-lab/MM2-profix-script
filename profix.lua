@@ -3,6 +3,7 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
@@ -16,9 +17,9 @@ task.spawn(function()
         if gunDrop then
             if not gunDetected then
                 WindUI:Notify({
-                    Title = "Profix Hub",
-                    Content = "Оружие выпало! Его можно подобрать.",
-                    Duration = 5,
+                    Title = "Gun Dropped!",
+                    Content = "Go to pock up gun.,
+                    Duration = 4,
                     Icon = "triangle-alert",
                 })
                 gunDetected = true
@@ -36,11 +37,16 @@ local ESP_Settings = {
 }
 local FarmSettings = { Enabled = false, Speed = 17 }
 local PlayerSettings = { WalkSpeed = 16, JumpPower = 50 }
+local PlayerCheats = { SpinSpeed = 10 }
 local currentTween = nil 
 local AimButtonGui = nil 
 local KillButtonGui = nil
 local GunButtonGui = nil
 local ESP_Objects = {}
+
+-- Переменные для Player Cheats
+local noclipConnection, jumpConnection, flyLoop, spinLoop
+local flyBv, flyBg
 
 -- Переменные для Anti-Fling
 local antiFlingConnections = {}
@@ -219,14 +225,87 @@ AutoFarmTab:Toggle({
 PlayerTab:Slider({ Title = "WalkSpeed", Value = { Min = 16, Max = 100, Default = 16 }, Callback = function(v) PlayerSettings.WalkSpeed = v; applyPlayerSettings(LocalPlayer.Character) end })
 PlayerTab:Slider({ Title = "JumpPower", Value = { Min = 50, Max = 200, Default = 50 }, Callback = function(v) PlayerSettings.JumpPower = v; applyPlayerSettings(LocalPlayer.Character) end })
 
--- Добавлен тумблер Anti-Fling
-PlayerTab:Toggle({
-    Title = "Anti-Fling",
-    State = false,
-    Callback = function(state)
-        AntiFlingEnabled = state
+PlayerTab:Toggle({ Title = "Anti-Fling", State = false, Callback = function(state) AntiFlingEnabled = state end })
+
+-- Добавленные функции в Player Tab
+PlayerTab:Toggle({ Title = "Noclip", State = false, Callback = function(state)
+    if state then
+        noclipConnection = RunService.Stepped:Connect(function()
+            local char = LocalPlayer.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
     end
-})
+end})
+
+PlayerTab:Toggle({ Title = "MultiJump", State = false, Callback = function(state)
+    if state then
+        jumpConnection = UserInputService.JumpRequest:Connect(function()
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+            if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+        end)
+    else
+        if jumpConnection then jumpConnection:Disconnect() jumpConnection = nil end
+    end
+end})
+
+PlayerTab:Toggle({ Title = "Fly", State = false, Callback = function(state)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if state and hrp then
+        flyBv = Instance.new("BodyVelocity", hrp)
+        flyBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        flyBv.Velocity = Vector3.new(0, 0, 0)
+        flyBg = Instance.new("BodyGyro", hrp)
+        flyBg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        flyBg.P = 10000; flyBg.D = 50
+        
+        flyLoop = RunService.RenderStepped:Connect(function()
+            local currentChar = LocalPlayer.Character
+            local currentHum = currentChar and currentChar:FindFirstChild("Humanoid")
+            if not currentHum or not flyBv or not flyBv.Parent then return end
+            
+            local moveDir = currentHum.MoveDirection
+            if moveDir.Magnitude > 0 then
+                -- Скорость полета зависит от WalkSpeed для удобства
+                flyBv.Velocity = Camera.CFrame:VectorToWorldSpace(moveDir) * PlayerSettings.WalkSpeed
+            else
+                flyBv.Velocity = Vector3.new(0, 0, 0)
+            end
+            flyBg.CFrame = Camera.CFrame
+        end)
+    else
+        if flyLoop then flyLoop:Disconnect() flyLoop = nil end
+        if flyBv then flyBv:Destroy() flyBv = nil end
+        if flyBg then flyBg:Destroy() flyBg = nil end
+    end
+end})
+
+PlayerTab:Toggle({ Title = "Spin", State = false, Callback = function(state)
+    if state then
+        spinLoop = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(PlayerCheats.SpinSpeed), 0)
+            end
+        end)
+    else
+        if spinLoop then spinLoop:Disconnect() spinLoop = nil end
+    end
+end})
+
+PlayerTab:Slider({ Title = "Spin Speed", Value = { Min = 1, Max = 100, Default = 10 }, Callback = function(v) 
+    PlayerCheats.SpinSpeed = v 
+end})
 
 SherifTab:Button({
     Title = "Spawn wallbang murder button",
