@@ -6,7 +6,7 @@ local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- Настройки и переменные
+
 local ESP_Settings = {
     Sherif = false, Murderer = false, Innocent = false,
     Tracers = false, EmptyBox = false, Names = false, 
@@ -20,7 +20,7 @@ local KillButtonGui = nil
 local GunButtonGui = nil
 local ESP_Objects = {}
 
--- Функция определения карты
+
 local function getActiveMap()
     local mapKeywords = {
         ["Bank"] = "Bank",
@@ -85,7 +85,7 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 })
 
--- Вкладки
+
 local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
 local EcpTab = Window:Tab({ Title = "Ecp", Icon = "eye" })
 local AutoFarmTab = Window:Tab({ Title = "AutoFarm", Icon = "zap" })
@@ -94,7 +94,7 @@ local SherifTab = Window:Tab({ Title = "Sherif", Icon = "crosshair" })
 local MurderTab = Window:Tab({ Title = "Murderer", Icon = "skull" })
 local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
 
--- Home Tab
+
 local accountAge = LocalPlayer.AccountAge .. " days"
 local avatarImage = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=420&h=420"
 local statusText = (LocalPlayer.Name == "kedeo06" and "Creator") or (LocalPlayer.MembershipType == Enum.MembershipType.Premium and "Premium" or "Normal")
@@ -109,16 +109,16 @@ HomeTab:Paragraph({
     ImageSize = 80
 })
 
--- ESP
+
 EcpTab:Toggle({ Title = "ESP Sherif", Callback = function(s) ESP_Settings.Sherif = s end })
 EcpTab:Toggle({ Title = "ESP Murderer", Callback = function(s) ESP_Settings.Murderer = s end })
 EcpTab:Toggle({ Title = "ESP Innocent", Callback = function(s) ESP_Settings.Innocent = s end })
 EcpTab:Toggle({ Title = "Tracers", Callback = function(s) ESP_Settings.Tracers = s end })
 EcpTab:Toggle({ Title = "Box", Callback = function(s) ESP_Settings.EmptyBox = s end })
 EcpTab:Toggle({ Title = "Names", Callback = function(s) ESP_Settings.Names = s end })
-EcpTab:Toggle({ Title = "Highlights", Callback = function(s) ESP_Settings.Highlight = s end })
+EcpTab:Toggle({ Title = "Outlines", Callback = function(s) ESP_Settings.Highlight = s end })
 
--- AutoFarm
+
 AutoFarmTab:Slider({ Title = "Farm Speed", Value = { Min = 17, Max = 100, Default = 17 }, Callback = function(v) FarmSettings.Speed = v end })
 AutoFarmTab:Toggle({
     Title = "Start Auto Farm", 
@@ -214,7 +214,7 @@ SherifTab:Button({
                 if gunDrop and gunDrop:IsA("BasePart") then
                     local savedPosition = HRP.CFrame
                     HRP.CFrame = gunDrop.CFrame
-                    task.wait(0.3)
+                    task.wait(0.1)
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                         LocalPlayer.Character.HumanoidRootPart.CFrame = savedPosition
                     end
