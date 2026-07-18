@@ -19,7 +19,7 @@ task.spawn(function()
                     Title = "Dropped Gun",
                     Content = "Gun dropped! Go to pick up",
                     Duration = 3,
-                    Icon = "alert-triangle",
+                    Icon = "triangle-alert",
                 })
                 gunDetected = true
             end
@@ -97,7 +97,7 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 })
 
-local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
+local HomeTab = Window:Tab({ Title = "Home", Icon = "house" })
 local EcpTab = Window:Tab({ Title = "Ecp", Icon = "eye" })
 local AutoFarmTab = Window:Tab({ Title = "AutoFarm", Icon = "zap" })
 local PlayerTab = Window:Tab({ Title = "Player", Icon = "user" })
