@@ -17,10 +17,10 @@ task.spawn(function()
         if gunDrop then
             if not gunDetected then
                 WindUI:Notify({
-                    Title = "Gun Dropped!",
-                    Content = "Go to pock up gun.,
-                    Duration = 4,
-                    Icon = "triangle-alert",
+                    Title = "Profix Hub",
+                    Content = "Оружие выпало! Его можно подобрать.",
+                    Duration = 5,
+                    Icon = "alert-triangle",
                 })
                 gunDetected = true
             end
@@ -161,7 +161,7 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 })
 
-local HomeTab = Window:Tab({ Title = "Home", Icon = "house" })
+local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
 local EcpTab = Window:Tab({ Title = "Ecp", Icon = "eye" })
 local AutoFarmTab = Window:Tab({ Title = "AutoFarm", Icon = "zap" })
 local PlayerTab = Window:Tab({ Title = "Player", Icon = "user" })
@@ -191,6 +191,7 @@ EcpTab:Toggle({ Title = "Tracers", Callback = function(s) ESP_Settings.Tracers =
 EcpTab:Toggle({ Title = "Box", Callback = function(s) ESP_Settings.EmptyBox = s end })
 EcpTab:Toggle({ Title = "Names", Callback = function(s) ESP_Settings.Names = s end })
 EcpTab:Toggle({ Title = "Outlines", Callback = function(s) ESP_Settings.Highlight = s end })
+
 AutoFarmTab:Slider({ Title = "Farm Speed", Value = { Min = 17, Max = 100, Default = 17 }, Callback = function(v) FarmSettings.Speed = v end })
 AutoFarmTab:Toggle({
     Title = "Start Auto Farm", 
