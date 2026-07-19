@@ -17,8 +17,8 @@ task.spawn(function()
         if gunDrop then
             if not gunDetected then
                 WindUI:Notify({
-                    Title = "Profix Hub",
-                    Content = "Оружие выпало! Его можно подобрать.",
+                    Title = "Gun Dropped!",
+                    Content = "Go to pick up gun.",
                     Duration = 5,
                     Icon = "triangle-alert",
                 })
@@ -163,7 +163,7 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 })
 
-local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
+local HomeTab = Window:Tab({ Title = "Home", Icon = "house" })
 local EcpTab = Window:Tab({ Title = "Ecp", Icon = "eye" })
 local AutoFarmTab = Window:Tab({ Title = "AutoFarm", Icon = "zap" })
 local PlayerTab = Window:Tab({ Title = "Player", Icon = "user" })
