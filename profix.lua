@@ -479,22 +479,29 @@ local playerDropdown = nil
 
 local function getPlayerNames()
     local list = {}
-    for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then table.insert(list, p.Name) end end
+    for _, p in pairs(Players:GetPlayers()) do 
+        if p ~= LocalPlayer then 
+            table.insert(list, p.Name) 
+        end 
+    end
     return list
 end
+
+-- Кнопка для ручного обновления списка игроков
+TeleportTab:Button({
+    Title = "Refresh Player List",
+    Callback = function()
+        if playerDropdown then
+            playerDropdown:Refresh(getPlayerNames())
+        end
+    end
+})
 
 playerDropdown = TeleportTab:Dropdown({
     Title = "Select Player",
     List = getPlayerNames(),
     Callback = function(val) selectedPlayer = val end
 })
-
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if playerDropdown then playerDropdown:Refresh(getPlayerNames()) end
-    end
-end)
 
 TeleportTab:Button({ Title = "TP to Selected Player", Callback = function()
     if selectedPlayer and Players:FindFirstChild(selectedPlayer) then
