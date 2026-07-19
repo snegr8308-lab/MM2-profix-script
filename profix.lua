@@ -109,7 +109,6 @@ end
 for _, player in ipairs(Players:GetPlayers()) do trackPlayer(player) end
 Players.PlayerAdded:Connect(trackPlayer)
 Players.PlayerRemoving:Connect(untrackPlayer)
-
 WindUI:AddTheme({ Name = "SubRed", Text = Color3.fromHex("#FFFFFF"), Icon = Color3.fromHex("#ef4444") })
 
 local Window = WindUI:CreateWindow({
@@ -265,7 +264,6 @@ PlayerTab:Toggle({ Title = "Spin", State = false, Callback = function(state)
 end})
 
 PlayerTab:Slider({ Title = "Spin Speed", Value = { Min = 1, Max = 100, Default = 10 }, Callback = function(v) PlayerCheats.SpinSpeed = v end})
-
 SherifTab:Button({
     Title = "Spawn wallbang murder button",
     Callback = function()
@@ -631,6 +629,98 @@ TrollTab:Toggle({
                     task.wait(0.5)
                 end
             end)
+        end
+    end
+})
+
+-- Новые функции для наблюдения и отправки ролей в чат
+local spectateTargetLoop, spectateSherifLoop, spectateMurderLoop
+local function resetCamera()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
+    end
+end
+
+TrollTab:Toggle({
+    Title = "Spectate Select Player",
+    State = false,
+    Callback = function(state)
+        if state then
+            spectateTargetLoop = RunService.RenderStepped:Connect(function()
+                if trollSelectedPlayer and Players:FindFirstChild(trollSelectedPlayer) then
+                    local target = Players[trollSelectedPlayer].Character
+                    if target and target:FindFirstChild("Humanoid") then
+                        workspace.CurrentCamera.CameraSubject = target.Humanoid
+                    end
+                end
+            end)
+        else
+            if spectateTargetLoop then spectateTargetLoop:Disconnect() spectateTargetLoop = nil end
+            resetCamera()
+        end
+    end
+})
+
+TrollTab:Toggle({
+    Title = "Spectate Murderer",
+    State = false,
+    Callback = function(state)
+        if state then
+            spectateMurderLoop = RunService.RenderStepped:Connect(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if getPlayerRole(p) == "Murderer" and p.Character and p.Character:FindFirstChild("Humanoid") then
+                        workspace.CurrentCamera.CameraSubject = p.Character.Humanoid
+                        return
+                    end
+                end
+            end)
+        else
+            if spectateMurderLoop then spectateMurderLoop:Disconnect() spectateMurderLoop = nil end
+            resetCamera()
+        end
+    end
+})
+
+TrollTab:Toggle({
+    Title = "Spectate Sherif",
+    State = false,
+    Callback = function(state)
+        if state then
+            spectateSherifLoop = RunService.RenderStepped:Connect(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if getPlayerRole(p) == "Sherif" and p.Character and p.Character:FindFirstChild("Humanoid") then
+                        workspace.CurrentCamera.CameraSubject = p.Character.Humanoid
+                        return
+                    end
+                end
+            end)
+        else
+            if spectateSherifLoop then spectateSherifLoop:Disconnect() spectateSherifLoop = nil end
+            resetCamera()
+        end
+    end
+})
+
+TrollTab:Button({
+    Title = "Send in Chat Roles",
+    Callback = function()
+        local murderName = "None"
+        local sherifName = "None"
+        for _, p in pairs(Players:GetPlayers()) do
+            if getPlayerRole(p) == "Murderer" then murderName = p.Name end
+            if getPlayerRole(p) == "Sherif" then sherifName = p.Name end
+        end
+        local message = "Murder: " .. murderName .. "\nSherif: " .. sherifName
+        
+        local legacyChat = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+        if legacyChat and legacyChat:FindFirstChild("SayMessageRequest") then
+            legacyChat.SayMessageRequest:FireServer(message, "All")
+        else
+            local TextChatService = game:GetService("TextChatService")
+            if TextChatService and TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+                local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+                if channel then channel:SendAsync(message) end
+            end
         end
     end
 })
