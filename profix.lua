@@ -20,7 +20,7 @@ task.spawn(function()
                     Title = "Profix Hub",
                     Content = "Оружие выпало! Его можно подобрать.",
                     Duration = 5,
-                    Icon = "alert-triangle",
+                    Icon = "triangle-alert",
                 })
                 gunDetected = true
             end
