@@ -264,6 +264,28 @@ PlayerTab:Toggle({ Title = "Spin", State = false, Callback = function(state)
 end})
 
 PlayerTab:Slider({ Title = "Spin Speed", Value = { Min = 1, Max = 100, Default = 10 }, Callback = function(v) PlayerCheats.SpinSpeed = v end})
+
+SherifTab:Button({
+    Title = "Wallbang murder",
+    Callback = function()
+        local LocalChar = LocalPlayer.Character
+        local MyHRP = LocalChar and LocalChar:FindFirstChild("HumanoidRootPart")
+        local Gun = LocalChar:FindFirstChild("Gun", true) or LocalPlayer.Backpack:FindFirstChild("Gun", true)
+        if not MyHRP or not Gun then return end
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and getPlayerRole(player) == "Murderer" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local TargetHRP = player.Character.HumanoidRootPart
+                local savedCFrame = MyHRP.CFrame
+                MyHRP.CFrame = CFrame.lookAt(MyHRP.Position, Vector3.new(TargetHRP.Position.X, MyHRP.Position.Y, TargetHRP.Position.Z))
+                if Gun:FindFirstChild("Shoot") then Gun.Shoot:FireServer(TargetHRP.CFrame, MyHRP.CFrame) end
+                task.wait(0.05)
+                MyHRP.CFrame = savedCFrame
+                break
+            end
+        end
+    end
+})
+
 SherifTab:Button({
     Title = "Spawn wallbang murder button",
     Callback = function()
@@ -297,6 +319,22 @@ SherifTab:Button({
 })
 
 SherifTab:Button({
+    Title = "Grab Gun",
+    Callback = function()
+        local char = LocalPlayer.Character
+        local HRP = char and char:FindFirstChild("HumanoidRootPart")
+        if not HRP then return end
+        local gunDrop = workspace:FindFirstChild("GunDrop", true)
+        if gunDrop and gunDrop:IsA("BasePart") then
+            local savedPosition = HRP.CFrame
+            HRP.CFrame = gunDrop.CFrame
+            task.wait(0.1)
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character.HumanoidRootPart.CFrame = savedPosition end
+        end
+    end
+})
+
+SherifTab:Button({
     Title = "Spawn Auto-Grab Button",
     Callback = function()
         if GunButtonGui then GunButtonGui:Destroy() GunButtonGui = nil
@@ -319,6 +357,28 @@ SherifTab:Button({
         end
     end
 })
+
+MurderTab:Button({
+    Title = "Kill all",
+    Callback = function()
+        local hasKnife = LocalPlayer.Character:FindFirstChild("Knife", true) or (LocalPlayer.Backpack and LocalPlayer.Backpack:FindFirstChild("Knife", true))
+        if not hasKnife then return end
+        local Remote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Gameplay"):WaitForChild("KillEvent")
+        local MyHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not MyHRP then return end
+        local savedCFrame = MyHRP.CFrame
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local targetHRP = player.Character.HumanoidRootPart
+                MyHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 1.5)
+                Remote:FireServer(player.Name, Color3.new(0.098, 0.882, 0.098), "Melee Kill!", targetHRP.CFrame)
+                task.wait(0.1)
+            end
+        end
+        MyHRP.CFrame = savedCFrame
+    end
+})
+
 MurderTab:Button({
     Title = "Spawn kill all button",
     Callback = function()
@@ -389,6 +449,7 @@ TeleportTab:Button({ Title = "TP to Lobby", Callback = function()
     if lobby and lobby:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character.HumanoidRootPart.CFrame = lobby.HumanoidRootPart.CFrame
     elseif lobby and lobby:FindFirstChildWhichIsA("BasePart") then LocalPlayer.Character.HumanoidRootPart.CFrame = lobby:FindFirstChildWhichIsA("BasePart").CFrame end
 end})
+
 -- === TROLL TAB LOGIC ===
 local trollSelectedPlayer = nil
 local trollPlayerDropdown = nil
@@ -405,6 +466,7 @@ end
 
 getgenv().OldPos = nil
 getgenv().FPDH = workspace.FallenPartsDestroyHeight
+
 local function SkidFling(TargetPlayer)
     local Character = LocalPlayer.Character
     local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
@@ -805,3 +867,4 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
