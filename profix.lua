@@ -16,7 +16,7 @@ task.spawn(function()
         
         if gunDrop then
             if not gunDetected then
-                WindUI:Notify({ Title = "Profix Hub", Content = "Оружие выпало! Его можно подобрать.", Duration = 5, Icon = "triangle-alert" })
+                WindUI:Notify({ Title = "Gun Dropped!", Content = "Go to pick up gun.", Duration = 5, Icon = "triangle-alert" })
                 gunDetected = true
             end
         else
