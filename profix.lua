@@ -17,10 +17,10 @@ task.spawn(function()
         if gunDrop then
             if not gunDetected then
                 WindUI:Notify({
-                    Title = "Gun Dropped!",
-                    Content = "Go to pick up gun.",
+                    Title = "Profix Hub",
+                    Content = "Оружие выпало! Его можно подобрать.",
                     Duration = 5,
-                    Icon = "triangle-alert",
+                    Icon = "alert-triangle",
                 })
                 gunDetected = true
             end
@@ -44,9 +44,11 @@ local KillButtonGui = nil
 local GunButtonGui = nil
 local ESP_Objects = {}
 
--- Переменные для Player Cheats
-local noclipConnection, jumpConnection, flyLoop, spinLoop
-local flyBv, flyBg
+-- Переменные для Player Cheats (обновлено под новый Fly)
+local noclipConnection, jumpConnection, spinLoop
+local flyBv, flyBg, flyHeartbeat, flyRenderStepped
+local tpwalking = false
+local flySpeedMultiplier = 1
 
 -- Переменные для Anti-Fling
 local antiFlingConnections = {}
@@ -161,7 +163,7 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 })
 
-local HomeTab = Window:Tab({ Title = "Home", Icon = "house" })
+local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
 local EcpTab = Window:Tab({ Title = "Ecp", Icon = "eye" })
 local AutoFarmTab = Window:Tab({ Title = "AutoFarm", Icon = "zap" })
 local PlayerTab = Window:Tab({ Title = "Player", Icon = "user" })
@@ -191,7 +193,6 @@ EcpTab:Toggle({ Title = "Tracers", Callback = function(s) ESP_Settings.Tracers =
 EcpTab:Toggle({ Title = "Box", Callback = function(s) ESP_Settings.EmptyBox = s end })
 EcpTab:Toggle({ Title = "Names", Callback = function(s) ESP_Settings.Names = s end })
 EcpTab:Toggle({ Title = "Outlines", Callback = function(s) ESP_Settings.Highlight = s end })
-
 AutoFarmTab:Slider({ Title = "Farm Speed", Value = { Min = 17, Max = 100, Default = 17 }, Callback = function(v) FarmSettings.Speed = v end })
 AutoFarmTab:Toggle({
     Title = "Start Auto Farm", 
@@ -228,7 +229,6 @@ PlayerTab:Slider({ Title = "JumpPower", Value = { Min = 50, Max = 200, Default =
 
 PlayerTab:Toggle({ Title = "Anti-Fling", State = false, Callback = function(state) AntiFlingEnabled = state end })
 
--- Добавленные функции в Player Tab
 PlayerTab:Toggle({ Title = "Noclip", State = false, Callback = function(state)
     if state then
         noclipConnection = RunService.Stepped:Connect(function()
@@ -258,36 +258,103 @@ PlayerTab:Toggle({ Title = "MultiJump", State = false, Callback = function(state
     end
 end})
 
+-- Обновленный Fly, переделанный на основе вашего файла
 PlayerTab:Toggle({ Title = "Fly", State = false, Callback = function(state)
     local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if state and hrp then
-        flyBv = Instance.new("BodyVelocity", hrp)
-        flyBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        flyBv.Velocity = Vector3.new(0, 0, 0)
-        flyBg = Instance.new("BodyGyro", hrp)
-        flyBg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        flyBg.P = 10000; flyBg.D = 50
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local root = char and (char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart"))
+    
+    if state then
+        if not char or not hum or not root then return end
         
-        flyLoop = RunService.RenderStepped:Connect(function()
-            local currentChar = LocalPlayer.Character
-            local currentHum = currentChar and currentChar:FindFirstChild("Humanoid")
-            if not currentHum or not flyBv or not flyBv.Parent then return end
-            
-            local moveDir = currentHum.MoveDirection
-            if moveDir.Magnitude > 0 then
-                -- Скорость полета зависит от WalkSpeed для удобства
-                flyBv.Velocity = Camera.CFrame:VectorToWorldSpace(moveDir) * PlayerSettings.WalkSpeed
-            else
-                flyBv.Velocity = Vector3.new(0, 0, 0)
+        local states = {
+            Enum.HumanoidStateType.Climbing, Enum.HumanoidStateType.FallingDown,
+            Enum.HumanoidStateType.Flying, Enum.HumanoidStateType.Freefall,
+            Enum.HumanoidStateType.GettingUp, Enum.HumanoidStateType.Jumping,
+            Enum.HumanoidStateType.Landed, Enum.HumanoidStateType.Physics,
+            Enum.HumanoidStateType.PlatformStanding, Enum.HumanoidStateType.Ragdoll,
+            Enum.HumanoidStateType.Running, Enum.HumanoidStateType.RunningNoPhysics,
+            Enum.HumanoidStateType.Seated, Enum.HumanoidStateType.StrafingNoPhysics,
+            Enum.HumanoidStateType.Swimming
+        }
+        for _, s in ipairs(states) do
+            pcall(function() hum:SetStateEnabled(s, false) end)
+        end
+        pcall(function() hum:ChangeState(Enum.HumanoidStateType.Swimming) end)
+        
+        local animate = char:FindFirstChild("Animate")
+        if animate then animate.Disabled = true end
+        for _, v in pairs(hum:GetPlayingAnimationTracks()) do
+            v:AdjustSpeed(0)
+        end
+        
+        hum.PlatformStand = true
+        
+        flyBg = Instance.new("BodyGyro", root)
+        flyBg.P = 9e4
+        flyBg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        flyBg.CFrame = root.CFrame
+        
+        flyBv = Instance.new("BodyVelocity", root)
+        flyBv.Velocity = Vector3.new(0, 0, 0)
+        flyBv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        
+        tpwalking = true
+        flyHeartbeat = RunService.Heartbeat:Connect(function()
+            if tpwalking and char and hum and hum.Parent then
+                if hum.MoveDirection.Magnitude > 0 then
+                    char:TranslateBy(hum.MoveDirection * flySpeedMultiplier)
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                    char:TranslateBy(Vector3.new(0, 0.5 * flySpeedMultiplier, 0))
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+                    char:TranslateBy(Vector3.new(0, -0.5 * flySpeedMultiplier, 0))
+                end
             end
-            flyBg.CFrame = Camera.CFrame
         end)
+        
+        flyRenderStepped = RunService.RenderStepped:Connect(function()
+            if flyBg then
+                flyBg.CFrame = Camera.CoordinateFrame
+            end
+        end)
+        
     else
-        if flyLoop then flyLoop:Disconnect() flyLoop = nil end
-        if flyBv then flyBv:Destroy() flyBv = nil end
+        tpwalking = false
+        if flyHeartbeat then flyHeartbeat:Disconnect() flyHeartbeat = nil end
+        if flyRenderStepped then flyRenderStepped:Disconnect() flyRenderStepped = nil end
+        
         if flyBg then flyBg:Destroy() flyBg = nil end
+        if flyBv then flyBv:Destroy() flyBv = nil end
+        
+        if hum then
+            local states = {
+                Enum.HumanoidStateType.Climbing, Enum.HumanoidStateType.FallingDown,
+                Enum.HumanoidStateType.Flying, Enum.HumanoidStateType.Freefall,
+                Enum.HumanoidStateType.GettingUp, Enum.HumanoidStateType.Jumping,
+                Enum.HumanoidStateType.Landed, Enum.HumanoidStateType.Physics,
+                Enum.HumanoidStateType.PlatformStanding, Enum.HumanoidStateType.Ragdoll,
+                Enum.HumanoidStateType.Running, Enum.HumanoidStateType.RunningNoPhysics,
+                Enum.HumanoidStateType.Seated, Enum.HumanoidStateType.StrafingNoPhysics,
+                Enum.HumanoidStateType.Swimming
+            }
+            for _, s in ipairs(states) do
+                pcall(function() hum:SetStateEnabled(s, true) end)
+            end
+            pcall(function() hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics) end)
+            hum.PlatformStand = false
+        end
+        
+        if char then
+            local animate = char:FindFirstChild("Animate")
+            if animate then animate.Disabled = false end
+        end
     end
+end})
+
+PlayerTab:Slider({ Title = "Fly Speed", Value = { Min = 1, Max = 20, Default = 1 }, Callback = function(v) 
+    flySpeedMultiplier = v 
 end})
 
 PlayerTab:Toggle({ Title = "Spin", State = false, Callback = function(state)
@@ -307,7 +374,6 @@ end})
 PlayerTab:Slider({ Title = "Spin Speed", Value = { Min = 1, Max = 100, Default = 10 }, Callback = function(v) 
     PlayerCheats.SpinSpeed = v 
 end})
-
 SherifTab:Button({
     Title = "Spawn wallbang murder button",
     Callback = function()
