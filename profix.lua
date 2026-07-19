@@ -78,7 +78,6 @@ local function getPlayerNames()
     end
     return list
 end
-
 -- === Anti-Fling ===
 local function setupCharacterCollision(character)
     local function disableCollide(part)
@@ -190,7 +189,6 @@ PlayerTab:Toggle({ Title = "Noclip", State = false, Callback = function(state)
         if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
     end
 end})
-
 PlayerTab:Toggle({ Title = "MultiJump", State = false, Callback = function(state)
     if state then
         jumpConnection = UserInputService.JumpRequest:Connect(function()
@@ -323,7 +321,6 @@ SherifTab:Button({
         end
     end
 })
-
 MurderTab:Button({
     Title = "Spawn kill all button",
     Callback = function()
@@ -402,6 +399,7 @@ local TargetFlingEnabled = false
 local FlingAllEnabled = false
 local FlingSherifEnabled = false
 local FlingMurderEnabled = false
+local HeadSitEnabled = false
 
 local function IsAnyFlingEnabled()
     return TargetFlingEnabled or FlingAllEnabled or FlingSherifEnabled or FlingMurderEnabled
@@ -409,8 +407,6 @@ end
 
 getgenv().OldPos = nil
 getgenv().FPDH = workspace.FallenPartsDestroyHeight
-
--- Оригинальная функция SkidFling, портированная под WindUI
 local function SkidFling(TargetPlayer)
     local Character = LocalPlayer.Character
     local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
@@ -478,7 +474,6 @@ local function SkidFling(TargetPlayer)
                         task.wait()
                     end
                 end
-            -- Если любой из переключателей Fling выключат, цикл прервется
             until Time + TimeToWait < tick() or not IsAnyFlingEnabled()
         end
         
@@ -511,7 +506,7 @@ local function SkidFling(TargetPlayer)
             workspace.FallenPartsDestroyHeight = getgenv().FPDH
         end
     else
-        WindUI:Notify({ Title = "Error", Content = "Your character is not ready", Duration = 2 })
+        WindUI:Notify({ Title = "Error", Content = "Your character is not ready", Duration = 2, Icon = "triangle-alert", })
     end
 end
 
@@ -520,7 +515,37 @@ TrollTab:Button({ Title = "Refresh Player List", Callback = function() if trollP
 trollPlayerDropdown = TrollTab:Dropdown({ Title = "Select Target", List = getPlayerNames(), Callback = function(val) trollSelectedPlayer = val end })
 
 TrollTab:Toggle({
-    Title = "Target Fling (Skid)",
+    Title = "Sit on Head",
+    State = false,
+    Callback = function(state)
+        HeadSitEnabled = state
+        if state then
+            task.spawn(function()
+                while HeadSitEnabled do
+                    task.wait()
+                    if trollSelectedPlayer and Players:FindFirstChild(trollSelectedPlayer) then
+                        local targetUser = Players[trollSelectedPlayer]
+                        local targetChar = targetUser.Character
+                        local myChar = LocalPlayer.Character
+                        local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                        
+                        if targetChar and targetChar:FindFirstChild("Head") and myHRP then
+                            myHRP.CFrame = targetChar.Head.CFrame * CFrame.new(0, 1.5, 0)
+                            myHRP.Velocity = Vector3.new(0, 0, 0)
+                        end
+                    else
+                        HeadSitEnabled = false
+                        WindUI:Notify({ Title = "Error", Content = "Target not found or not selected!", Duration = 2, Icon = "triangle-alert",})
+                        break
+                    end
+                end
+            end)
+        end
+    end
+})
+
+TrollTab:Toggle({
+    Title = "Target Fling",
     State = false,
     Callback = function(state)
         TargetFlingEnabled = state
@@ -529,11 +554,9 @@ TrollTab:Toggle({
                 while TargetFlingEnabled do
                     if trollSelectedPlayer and Players:FindFirstChild(trollSelectedPlayer) then
                         local targetUser = Players[trollSelectedPlayer]
-                        if targetUser.Character then
-                            SkidFling(targetUser)
-                        end
+                        if targetUser.Character then SkidFling(targetUser) end
                     else
-                        WindUI:Notify({ Title = "Error", Content = "Target not found or not selected!", Duration = 2 })
+                        WindUI:Notify({ Title = "Error", Content = "Target not found or not selected!", Duration = 2, Icon = "triangle-alert", })
                         task.wait(2)
                     end
                     task.wait(0.5)
