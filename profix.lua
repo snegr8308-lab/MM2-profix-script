@@ -116,6 +116,12 @@ local Window = WindUI:CreateWindow({
     BackgroundTransparency = 0.67, Title = "Profix Hub", Icon = "shield", Author = "by Enormus", Folder = "ProfixHub", Size = UDim2.fromOffset(580, 460), Transparent = true, Theme = "SubRed", User = { Enabled = true, Anonymous = false },
 })
 
+Window:Tag({
+    Title = "   v1.61   ",
+    Color = Color3.fromHex("#991b1b"),
+    Radius = 8
+})
+
 local HomeTab = Window:Tab({ Title = "Home", Icon = "house" })
 local EcpTab = Window:Tab({ Title = "Ecp", Icon = "eye" })
 local AutoFarmTab = Window:Tab({ Title = "AutoFarm", Icon = "zap" })
@@ -466,7 +472,6 @@ end
 
 getgenv().OldPos = nil
 getgenv().FPDH = workspace.FallenPartsDestroyHeight
-
 local function SkidFling(TargetPlayer)
     local Character = LocalPlayer.Character
     local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
@@ -867,4 +872,3 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
-
