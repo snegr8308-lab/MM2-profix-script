@@ -766,8 +766,8 @@ TrollTab:Toggle({
 TrollTab:Button({
     Title = "Send in Chat Roles",
     Callback = function()
-        local murderName = "None"
-        local sherifName = "None"
+        local murderName = "NotFound"
+        local sherifName = "NotFound"
         for _, p in pairs(Players:GetPlayers()) do
             if getPlayerRole(p) == "Murderer" then murderName = p.Name end
             if getPlayerRole(p) == "Sherif" then sherifName = p.Name end
