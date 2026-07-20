@@ -6,12 +6,6 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-Window:Tag({
-    Title = "v1.6.6",
-    Icon = "github",
-    Color = Color3.fromHex("#dc2626"),
-    Radius = 13,
-})
 
 -- Функция уведомления при появлении GunDrop
 task.spawn(function()
