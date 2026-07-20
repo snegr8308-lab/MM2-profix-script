@@ -109,17 +109,28 @@ end
 for _, player in ipairs(Players:GetPlayers()) do trackPlayer(player) end
 Players.PlayerAdded:Connect(trackPlayer)
 Players.PlayerRemoving:Connect(untrackPlayer)
-WindUI:AddTheme({ Name = "SubRed", Text = Color3.fromHex("#FFFFFF"), Icon = Color3.fromHex("#ef4444") })
+
+WindUI:AddTheme({
+    Name = "Crimson",
+    Accent = Color3.fromHex("#b91c1c"),
+    Outline = Color3.fromHex("#fca5a5"),
+    Placeholder = Color3.fromHex("#6f757b"),
+    Button = Color3.fromHex("#991b1b"),
+    Dialog = Color3.fromHex("#450a0a"),
+    Text = Color3.fromHex("#fef2f2"),
+    Background = Color3.fromHex("#0c0404"),
+    Icon = Color3.fromHex("#dc2626")
+})
 
 local Window = WindUI:CreateWindow({
     Background = "video:https://github.com/snegr8308-lab/Backgrounds-Themes/raw/main/red_bg.webm",
-    BackgroundTransparency = 0.67, Title = "Profix Hub", Icon = "shield", Author = "by Enormus", Folder = "ProfixHub", Size = UDim2.fromOffset(580, 460), Transparent = true, Theme = "SubRed", User = { Enabled = true, Anonymous = false },
+    BackgroundTransparency = 0.67, Title = "Profix Hub", Icon = "shield", Author = "by Enormus", Folder = "ProfixHub", Size = UDim2.fromOffset(580, 460), Transparent = true, Theme = "Crimson", User = { Enabled = true, Anonymous = false },
 })
 
 Window:Tag({
     Title = "   v1.61   ",
     Color = Color3.fromHex("#991b1b"),
-    Radius = 8
+    Radius = 13,
 })
 
 local HomeTab = Window:Tab({ Title = "Home", Icon = "house" })
