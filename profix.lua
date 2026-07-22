@@ -1,4 +1,4 @@
-local _version = "1.6.66"
+local _version = "1.6.6"
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/download/" .. _version .. "/main.lua"))() 
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -121,7 +121,7 @@ WindUI:AddTheme({
     Background = Color3.fromHex("#0c0404"),
     Icon = Color3.fromHex("#dc2626")
 })
-
+--Видео для Background не работает
 local Window = WindUI:CreateWindow({
     Background = "video:https://raw.githubusercontent.com/snegr8308-lab/Backgrounds-Themes/main/puggy.webm",
     BackgroundTransparency = 0.67, Title = "Profix Hub", Icon = "shield", Author = "by Enormus", Folder = "ProfixHub", Size = UDim2.fromOffset(580, 460), Transparent = true, Theme = "Crimson", User = { Enabled = true, Anonymous = false },
