@@ -123,12 +123,12 @@ WindUI:AddTheme({
 })
 --Видео для Background не работает
 local Window = WindUI:CreateWindow({
-    Background = "rbxassetid://85303041064979",
+    --Background = "",
     BackgroundTransparency = 0.67, Title = "Profix Hub", Icon = "shield", Author = "by Enormus", Folder = "ProfixHub", Size = UDim2.fromOffset(580, 460), Transparent = true, Theme = "Crimson", User = { Enabled = true, Anonymous = false },
 })
 
 Window:Tag({
-    Title = "   v1.61   ",
+    Title = " v1.62-Fixed ",
     Color = Color3.fromHex("#991b1b"),
     Radius = 13,
 })
